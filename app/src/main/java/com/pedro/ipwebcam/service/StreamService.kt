@@ -46,7 +46,7 @@ class StreamService : Service() {
     private var textFilterRender: TextFilterRender? = null
     private var timestampRunnable: Runnable? = null
 
-    private val connectChecker = object : ConnectChecker {
+    private val connectChecker: ConnectChecker = object : ConnectChecker {
         override fun onConnectionStarted(url: String) {}
         override fun onConnectionSuccess() {}
         override fun onConnectionFailed(reason: String) {}

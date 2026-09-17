@@ -49,6 +49,14 @@ dependencies {
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }
 
+configurations.all {
+    resolutionStrategy {
+        force 'com.github.pedroSG94.RootEncoder:common:2.8.1'
+        force 'com.github.pedroSG94.RootEncoder:library:2.8.1'
+        force 'com.github.pedroSG94.RootEncoder:encoder:2.8.1'
+    }
+}
+
 tasks.whenTaskAdded { task ->
     if (task.name.contains("AarMetadata")) {
         task.enabled = false
