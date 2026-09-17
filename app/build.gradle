@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.pedro.ipwebcam'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.pedro.ipwebcam"
         minSdk 21
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0.0"
 
