@@ -68,10 +68,13 @@ class WebControlServer(
             // 4. 设备与推流状态 JSON
             uri == "/status.json" -> {
                 val rtsp = service?.rtspServerCamera2
+                val isStreaming = rtsp?.isStreaming ?: false
+                val clients = (rtsp?.streamClient as? com.pedro.rtspserver.util.RtspServerStreamClient)?.getNumClients() ?: 0
+                val torch = rtsp?.isLanternEnabled ?: false
                 val json = """{
-                    "isStreaming": ${rtsp?.isStreaming ?: false},
-                    "clients": ${rtsp?.numClients ?: 0},
-                    "torch": ${rtsp?.isLanternEnabled ?: false},
+                    "isStreaming": $isStreaming,
+                    "clients": $clients,
+                    "torch": $torch,
                     "ip": "${NetworkUtils.getLocalIpAddress()}",
                     "rtspPort": 8554
                 }""".trimIndent()

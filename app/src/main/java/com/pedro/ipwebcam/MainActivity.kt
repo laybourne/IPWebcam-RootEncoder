@@ -93,8 +93,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnToggleTorch.setOnClickListener {
-            val state = streamService?.toggleFlashlight() ?: false
-            Toast.makeText(this, if (state) "闪光灯开启" else "闪光灯关闭", Toast.LENGTH_SHORT).show()
+            val state = streamService?.toggleFlashlight() == true
+            val msg: String = if (state) "闪光灯开启" else "闪光灯关闭"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
 

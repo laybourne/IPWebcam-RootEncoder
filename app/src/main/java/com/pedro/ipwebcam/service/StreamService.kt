@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.wifi.WifiManager
 import android.os.Binder
 import android.os.Build
@@ -16,20 +17,20 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import com.pedro.encoder.input.gl.render.filters.object.TextObjectFilterRender
+import com.pedro.common.ConnectChecker
+import com.pedro.encoder.input.gl.render.filters.`object`.TextFilterRender
 import com.pedro.encoder.utils.gl.TranslateTo
 import com.pedro.ipwebcam.MainActivity
 import com.pedro.ipwebcam.utils.NetworkUtils
 import com.pedro.ipwebcam.web.WebControlServer
 import com.pedro.library.view.OpenGlView
 import com.pedro.rtspserver.RtspServerCamera2
-import com.pedro.rtspserver.ServerListener
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class StreamService : Service(), ServerListener {
+class StreamService : Service(), ConnectChecker {
 
     private val binder = LocalBinder()
     var rtspServerCamera2: RtspServerCamera2? = null
@@ -42,7 +43,7 @@ class StreamService : Service(), ServerListener {
     var lastSnapshotBytes: ByteArray? = null
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var textFilterRender: TextObjectFilterRender? = null
+    private var textFilterRender: TextFilterRender? = null
     private var timestampRunnable: Runnable? = null
 
     inner class LocalBinder : Binder() {
@@ -68,14 +69,16 @@ class StreamService : Service(), ServerListener {
     ) {
         try {
             // 1. 初始化 RootEncoder 的 Camera2 RTSP 服务器
-            rtspServerCamera2 = RtspServerCamera2(openGlView, this, rtspPort).apply {
-                // 1080P, 30fps, 2.5Mbps, 关键帧间隔 2 秒
-                prepareVideo(1920, 1080, 30, 2500 * 1024, 2)
-                // 44.1kHz, 128kbps AAC 音频
-                prepareAudio(128 * 1024, 44100, true)
-                // 启动 RTSP 监听
-                startServer()
-            }
+            val camera = RtspServerCamera2(openGlView, this, rtspPort)
+            rtspServerCamera2 = camera
+
+            // 1080P, 30fps, 2.5Mbps, 关键帧间隔 2 秒
+            camera.prepareVideo(1920, 1080, 30, 2500 * 1024, 2)
+            // 44.1kHz, 128kbps AAC 音频
+            camera.prepareAudio(128 * 1024, 44100, true)
+            // 启动本地预览与 RTSP 推流服务
+            camera.startPreview(1920, 1080)
+            camera.startStream()
 
             // 2. 启动嵌入式 Web 控制服务器
             webServer = WebControlServer(httpPort) { this }.apply {
@@ -98,7 +101,6 @@ class StreamService : Service(), ServerListener {
         rtspServerCamera2?.apply {
             if (isStreaming) stopStream()
             if (isOnPreview) stopPreview()
-            stopServer()
         }
         webServer?.stop()
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -135,27 +137,28 @@ class StreamService : Service(), ServerListener {
     }
 
     private fun setupLiveWatermark() {
-        textFilterRender = TextObjectFilterRender().apply {
-            // 水印放置在左下角
-            setScale(35f, 8f)
-            setPosition(TranslateTo.BOTTOM_LEFT)
-            rtspServerCamera2?.glInterface?.addFilter(this)
-        }
-
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val filter = TextFilterRender().apply {
+            setScale(45f, 10f)
+            setPosition(TranslateTo.BOTTOM_LEFT)
+            setText("CAM 01 | " + dateFormat.format(Date()), 24f, Color.GREEN)
+        }
+        textFilterRender = filter
+        rtspServerCamera2?.glInterface?.setFilter(filter)
+
         timestampRunnable = object : Runnable {
             override fun run() {
                 val timeStr = "CAM 01 | " + dateFormat.format(Date())
-                textFilterRender?.setText(timeStr)
+                textFilterRender?.setText(timeStr, 24f, Color.GREEN)
                 mainHandler.postDelayed(this, 1000)
             }
         }
-        mainHandler.post(timestampRunnable!!)
+        timestampRunnable?.let { mainHandler.postDelayed(it, 1000) }
     }
 
     private fun stopWatermarkUpdates() {
         timestampRunnable?.let { mainHandler.removeCallbacks(it) }
-        textFilterRender?.let { rtspServerCamera2?.glInterface?.removeFilter(it) }
+        rtspServerCamera2?.glInterface?.clearFilters()
     }
 
     private fun acquireLocks() {
@@ -207,6 +210,12 @@ class StreamService : Service(), ServerListener {
         super.onDestroy()
     }
 
-    override fun onServerConnected() {}
-    override fun onServerDisconnected() {}
+    // ConnectChecker 回调
+    override fun onConnectionStarted(url: String) {}
+    override fun onConnectionSuccess() {}
+    override fun onConnectionFailed(reason: String) {}
+    override fun onDisconnect() {}
+    override fun onAuthError() {}
+    override fun onAuthSuccess() {}
+    override fun onNewBitrate(bitrate: Long) {}
 }
