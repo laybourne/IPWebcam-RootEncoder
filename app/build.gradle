@@ -43,7 +43,7 @@ dependencies {
 
     // RootEncoder 核心库与 RTSP Server
     implementation 'com.github.pedroSG94:RTSP-Server:1.4.3'
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.8.0'
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.8.1'
 
     // 轻量嵌入式 HTTP 服务器 (提供 Web 控制端与 /shot.jpg 抓拍 API)
     implementation 'org.nanohttpd:nanohttpd:2.3.1'

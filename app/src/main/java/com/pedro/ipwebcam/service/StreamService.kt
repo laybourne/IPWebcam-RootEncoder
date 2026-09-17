@@ -30,7 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class StreamService : Service(), ConnectChecker {
+class StreamService : Service() {
 
     private val binder = LocalBinder()
     var rtspServerCamera2: RtspServerCamera2? = null
@@ -45,6 +45,16 @@ class StreamService : Service(), ConnectChecker {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var textFilterRender: TextFilterRender? = null
     private var timestampRunnable: Runnable? = null
+
+    private val connectChecker = object : ConnectChecker {
+        override fun onConnectionStarted(url: String) {}
+        override fun onConnectionSuccess() {}
+        override fun onConnectionFailed(reason: String) {}
+        override fun onDisconnect() {}
+        override fun onAuthError() {}
+        override fun onAuthSuccess() {}
+        override fun onNewBitrate(bitrate: Long) {}
+    }
 
     inner class LocalBinder : Binder() {
         fun getService(): StreamService = this@StreamService
@@ -69,7 +79,7 @@ class StreamService : Service(), ConnectChecker {
     ) {
         try {
             // 1. 初始化 RootEncoder 的 Camera2 RTSP 服务器
-            val camera = RtspServerCamera2(openGlView, this, rtspPort)
+            val camera = RtspServerCamera2(openGlView, connectChecker, rtspPort)
             rtspServerCamera2 = camera
 
             // 1080P, 30fps, 2.5Mbps, 关键帧间隔 2 秒
@@ -77,7 +87,7 @@ class StreamService : Service(), ConnectChecker {
             // 44.1kHz, 128kbps AAC 音频
             camera.prepareAudio(128 * 1024, 44100, true)
             // 启动本地预览与 RTSP 推流服务
-            camera.startPreview(1920, 1080)
+            camera.startPreview()
             camera.startStream()
 
             // 2. 启动嵌入式 Web 控制服务器
@@ -141,7 +151,7 @@ class StreamService : Service(), ConnectChecker {
         val filter = TextFilterRender().apply {
             setScale(45f, 10f)
             setPosition(TranslateTo.BOTTOM_LEFT)
-            setText("CAM 01 | " + dateFormat.format(Date()), 24f, Color.GREEN)
+            setText("CAM 01 | " + dateFormat.format(Date()), 24f, Color.GREEN, Color.TRANSPARENT, null)
         }
         textFilterRender = filter
         rtspServerCamera2?.glInterface?.setFilter(filter)
@@ -149,7 +159,7 @@ class StreamService : Service(), ConnectChecker {
         timestampRunnable = object : Runnable {
             override fun run() {
                 val timeStr = "CAM 01 | " + dateFormat.format(Date())
-                textFilterRender?.setText(timeStr, 24f, Color.GREEN)
+                textFilterRender?.setText(timeStr, 24f, Color.GREEN, Color.TRANSPARENT, null)
                 mainHandler.postDelayed(this, 1000)
             }
         }
@@ -209,13 +219,4 @@ class StreamService : Service(), ConnectChecker {
         wifiLock?.let { if (it.isHeld) it.release() }
         super.onDestroy()
     }
-
-    // ConnectChecker 回调
-    override fun onConnectionStarted(url: String) {}
-    override fun onConnectionSuccess() {}
-    override fun onConnectionFailed(reason: String) {}
-    override fun onDisconnect() {}
-    override fun onAuthError() {}
-    override fun onAuthSuccess() {}
-    override fun onNewBitrate(bitrate: Long) {}
 }
