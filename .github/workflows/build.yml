@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Assemble Debug APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPWebcam-RootEncoder-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "IPWebcam-RootEncoder v1.0.0 (Debug APK)"
+          body: |
+            ## IP Webcam Pro (RootEncoder 重构版)
+            - 核心引擎：RootEncoder + RTSP-Server (Camera2 + MediaCodec 硬件加速)
+            - 嵌入式 Web 控制台：NanoHTTPD
+            - 视频规格：1080P @ 30fps H.264 + AAC 44.1kHz
+            - 动态 OpenGL ES 时间戳水印
+          draft: false
+          prerelease: false
+          files: app/build/outputs/apk/debug/app-debug.apk
