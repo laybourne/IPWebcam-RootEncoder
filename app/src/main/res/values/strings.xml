@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">IP Webcam Pro (RootEncoder)</string>
+    <string name="start_stream">启动服务器</string>
+    <string name="stop_stream">停止服务器</string>
+    <string name="status_stopped">状态：已停止</string>
+    <string name="status_running">状态：运行中</string>
+    <string name="switch_camera">翻转镜头</string>
+    <string name="toggle_torch">开关闪光灯</string>
+</resources>

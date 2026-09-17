@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.pedro.ipwebcam'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.pedro.ipwebcam"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // RootEncoder 核心库与 RTSP Server
+    implementation 'com.github.pedroSG94:RTSP-Server:1.4.3'
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.8.0'
+
+    // 轻量嵌入式 HTTP 服务器 (提供 Web 控制端与 /shot.jpg 抓拍 API)
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+}
